@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.DS_Store
+.vercel/
+
+# local-only: eval inputs and notes
+golden/
+IDEAS_V2.md
