@@ -123,6 +123,9 @@
   .privacy { font-size: 12px; color: var(--muted); margin-top: 6px; }
   .disclaimer { font-size: 12px; color: var(--muted); margin-top: 16px; border-top: 1px solid var(--border); padding-top: 10px; }
   button.link.danger { color: var(--bad); margin-left: auto; }
+  /* open demo: without a password only the guest card and the result are shown */
+  body.guest .member { display: none; }
+  .guest-text { margin: 0 0 4px; color: var(--muted); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* inline answers to clarifying questions */
@@ -147,8 +150,19 @@
 
   <div id="app" class="hidden">
     <div class="col-input">
+    <!-- Open demo (no password) -->
+    <section id="guest" class="card hidden">
+      <h2>Live demo</h2>
+      <p class="guest-text">Run a real analysis of a fictional candidate against a demo job post — no sign-in needed.</p>
+      <div class="row">
+        <button id="guestSampleBtn" type="button">Try a sample</button>
+        <button id="showLogin" type="button" class="link">Have a password? Sign in</button>
+      </div>
+      <div id="guestError" class="error hidden"></div>
+    </section>
+
     <!-- Profile: one-line summary, form behind the Edit button -->
-    <section class="card">
+    <section class="card member">
       <div class="profile-head">
         <h2>My profile</h2>
         <button id="profileToggle" class="secondary" type="button">Edit</button>
@@ -177,7 +191,7 @@
     </section>
 
     <!-- Job post -->
-    <section class="card">
+    <section class="card member">
       <h2>Job post</h2>
       <textarea id="vacancy" rows="10" placeholder="Paste the job post text"></textarea>
       <div class="row">
@@ -190,7 +204,7 @@
     </section>
 
     <!-- Insights on demand -->
-    <section class="card">
+    <section class="card member">
       <div class="profile-head">
         <h2>Insights</h2>
         <button id="analyticsBtn" class="secondary" type="button">Get insights</button>
@@ -282,7 +296,7 @@
   // ---------- Sign-in ----------
   function logout() {
     store.del("vd_password");
-    show($("app"), false);
+    startGuest();
     show($("login"), true);
   }
   async function login() {
@@ -389,40 +403,28 @@
   });
 
   // ---------- Demo sample (fictional candidate) ----------
-  const SAMPLE_VACANCY = `Senior Product Manager — Payments Platform (ExamplePay)
-ExamplePay builds payment infrastructure for online merchants across Europe.
-Requirements:
-- 4+ years of product management in fintech or payments
-- Hands-on experience with card acquiring and PSP integrations
-- Experience writing API-first product requirements with engineering teams
-- Fluent English
-Nice to have:
-- Experience with fraud and chargeback tooling
-- German
-Remote within Europe.`;
-  const SAMPLE_PROFILE = {
-    resume: `Alex Example — Product Manager
-Product Manager, Acme Pay (payments app), Jan 2021 – Dec 2025: owned checkout and card payments; integrated 3 PSPs (Stripe, Adyen, Checkout.com); wrote API specs with backend team.
-Business Analyst, Beta Soft (B2B banking SaaS), Jan 2019 – Dec 2020: requirements for KYC onboarding.
-Tools: Jira, SQL, Figma. English C1.`,
-    geography: "Europe, remote",
-    domains: "fintech, payments",
-  };
-  // The demo always uses the fictional candidate; the user's profile, input and history stay untouched.
-  $("sampleBtn").addEventListener("click", async () => {
-    const btn = $("sampleBtn");
+  // The sample input lives on the server (lib/sample.js); /api/sample needs no password.
+  // The user's profile, input and history stay untouched.
+  async function runSample(btn, errorBox) {
     btn.disabled = true;
-    show($("vacancyError"), false);
+    show(errorBox, false);
     renderSkeleton();
     try {
-      const data = await api("/api/analyze", { vacancy: SAMPLE_VACANCY, profile: { ...SAMPLE_PROFILE, redFlags: "", notes: "" } });
+      const data = await api("/api/sample");
       renderResult(data, { sample: true });
     } catch (e) {
-      showVacancyError(e.message);
+      errorBox.textContent = e.message;
+      show(errorBox, true);
       show($("result"), false);
     } finally {
       btn.disabled = false;
     }
+  }
+  $("sampleBtn").addEventListener("click", () => runSample($("sampleBtn"), $("vacancyError")));
+  $("guestSampleBtn").addEventListener("click", () => runSample($("guestSampleBtn"), $("guestError")));
+  $("showLogin").addEventListener("click", () => {
+    show($("login"), true);
+    $("password").focus();
   });
 
   // ---------- Delete my data ----------
@@ -792,7 +794,17 @@ Tools: Jira, SQL, Figma. English C1.`,
 
   // ---------- Start ----------
   let started = false;
+  // Without a password: guest card + example result; profile, Analyze and Insights stay hidden.
+  function startGuest() {
+    document.body.classList.add("guest");
+    show($("guest"), true);
+    show($("app"), true);
+    show($("history"), false);
+    if (!started) renderResult(EXAMPLE, { example: true });
+  }
   function startApp() {
+    document.body.classList.remove("guest");
+    show($("guest"), false);
     show($("login"), false);
     show($("app"), true);
     if (started) return;
@@ -805,9 +817,9 @@ Tools: Jira, SQL, Figma. English C1.`,
   }
 
   if (store.get("vd_password", "")) {
-    api("/api/auth").then(startApp).catch(() => show($("login"), true));
+    api("/api/auth").then(startApp).catch(() => startGuest());
   } else {
-    show($("login"), true);
+    startGuest();
   }
 })();
 </script>

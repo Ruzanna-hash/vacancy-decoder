@@ -4,7 +4,7 @@
 
 A pet project built with Claude Code to learn how to ship an LLM product end to end: brief → prompt → structured output → evals → guardrails → deploy.
 
-- **Live demo:** [vacancy-decoder.vercel.app](https://vacancy-decoder.vercel.app/) (password-protected — ask me for access; inside, **Try a sample** runs a live analysis of a fictional candidate)
+- **Live demo:** [vacancy-decoder.vercel.app](https://vacancy-decoder.vercel.app/) — click **Try a sample** for a live analysis of a fictional candidate, no sign-in needed. Analyzing your own job posts is password-protected — ask me for access.
 - **Product brief:** [BRIEF.md](BRIEF.md) · **How decisions were made:** [DECISIONS.md](DECISIONS.md) · **Eval set:** [GOLDEN_SET.md](GOLDEN_SET.md)
 
 <p align="center"><img src="docs/result.png" alt="Analysis result for a fictional candidate: 80% match, verdict, clarifying questions, gaps and requirements breakdown" width="560"></p>
@@ -50,6 +50,7 @@ Lesson learned: the first AI-drafted reference had errors (missing cap, wrong fo
 
 - The profile, resume and history live **only in the user's browser** (localStorage); the server stores nothing and logs only token counts and cost.
 - The API key exists only in server-side functions; a shared password is checked server-side with a timing-safe comparison.
+- The open demo endpoint (`/api/sample`) ignores the request body and runs only a fixed fictional input, so it cannot be used to send arbitrary prompts; it is capped at 20 calls per hour per instance and has a kill switch.
 - Model output is rendered as text only (no `innerHTML`); the prompt treats the job post and resume as data, not instructions.
 - Only `public/` is served; strict security headers (CSP, no framing); a $10/month spend limit caps the worst case.
 
@@ -60,6 +61,8 @@ public/index.html            browser: UI, profile and today's history in localSt
    │  POST + password header
    ▼
 api/analyze · daily · auth   Vercel serverless functions (hold the API key)
+api/sample                   open demo: no password, fixed fictional input (lib/sample.js)
+   ├─ lib/analyze.js         prompt, JSON schema, one analysis call
    ├─ lib/claude.js          Claude API: claude-haiku-5-5, effort medium, JSON schema output, retry on max_tokens
    ├─ lib/guards.js          deterministic checks on top of the model output
    └─ lib/scoring.js         match formula and hard-gate caps

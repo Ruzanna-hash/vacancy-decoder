@@ -6,7 +6,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 
 const PORT = Number(process.env.PORT) || 3000;
-const ROUTES = new Set(["auth", "analyze", "daily"]);
+const ROUTES = new Set(["auth", "analyze", "daily", "sample"]);
 
 createServer(async (req, res) => {
   try {

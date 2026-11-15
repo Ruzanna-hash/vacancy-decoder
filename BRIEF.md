@@ -95,7 +95,8 @@ The LLM extracts and labels requirements; **code** computes the percentage, caps
 
 ## Access & budget
 
-- A public link with a shared password (given to interviewers / testers), checked on the server; the password and the API key live in environment variables, never in code.
+- **Open demo:** anyone with the link can run *Try a sample* — a live analysis of a fictional candidate. The server uses only its own fixed input; limit 20 runs per hour per server instance; can be switched off with `SAMPLE_DISABLED=1`.
+- **Full access** (own profile, Analyze, Insights): a shared password given to interviewers / testers, checked on the server; the password and the API key live in environment variables, never in code.
 - Limits per user per day: 50 analyses, 3 insights (counted in the browser).
 - The real budget guard is a $10/month spend limit on the API account.
 
